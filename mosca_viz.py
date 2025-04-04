@@ -278,9 +278,39 @@ if __name__ == "__main__":
     args = args.parse_args()
 
     viz_main(
-        args.savedir,
-        args.logdir,
-        args.cfg,
+        save_dir=args.savedir,
+        log_dir=args.logdir,
+        cfg_fn=args.cfg,
         N=args.N,
         move_angle_deg=args.move_angle_deg,
     )
+
+    # viz_main(
+    #     save_dir=osp.join(logdir, "viz"),
+    #     log_dir=logdir,
+    #     cfg_fn=args.cfg,
+    #     N=getattr(cfg, "viz_N", 5),
+    #     move_angle_deg=getattr(cfg, "viz_move_angle_deg", 10.0),
+    #     H_3d=getattr(cfg, "viz_H_3d", 960),
+    #     W_3d=getattr(cfg, "viz_W_3d", 960),
+    #     fov_3d=getattr(cfg, "viz_fov_3d", 70),
+    #     back_ratio_3d=getattr(cfg, "viz_back_ratio_3d", 1.5),
+    #     up_ratio=getattr(cfg, "viz_up_ratio", 0.05),
+    #     bg_color=getattr(cfg, "photo_default_bg_color", [0.0, 0.0, 0.0]),
+    # )
+
+    # def viz_main(
+    #     save_dir,
+    #     log_dir,
+    #     cfg_fn,
+    #     N=5,
+    #     move_angle_deg=20.0,
+    #     H_3d=960,
+    #     # H_3d=640,
+    #     W_3d=960,
+    #     fov_3d=70,
+    #     back_ratio_3d=0.8,
+    #     up_ratio=0.4,
+    #     bg_color=[1.0, 1.0, 1.0],
+    # ):
+

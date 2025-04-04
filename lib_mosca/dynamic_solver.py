@@ -10,7 +10,7 @@ import open3d as o3d
 
 sys.path.append(osp.dirname(osp.abspath(__file__)))
 
-from camera import MonocularCameras
+from lib_moca.camera import MonocularCameras
 from dynamic_solver_utils import prepare_track_buffers, get_world_points
 from mosca import MoSca
 from scaffold_utils.viz_helper import (
@@ -179,7 +179,7 @@ def get_dynamic_curves(
                 1.0 - mix_mask
             )
 
-        # * 3D curve still need to use filter to exclud wrong fetch
+        # * 3D curve still need to use filter to exclude wrong fetch
         if refilter_2d_track_flag and not return_all_curves:
             inlier_mask = slot_o3d_outlier_identifyication(
                 curve_xyz,

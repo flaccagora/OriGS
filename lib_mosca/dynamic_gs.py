@@ -55,8 +55,6 @@ class DynSCFGaussian(nn.Module):
     # _dynamic_logit
     #################################################################
 
-    # ! note: use_dyn_o = False so permanently remove
-
     def __init__(
         self,
         scf: MoSca = None,
@@ -64,17 +62,15 @@ class DynSCFGaussian(nn.Module):
         min_scale=0.0,
         max_sph_order=0,
         device=torch.device("cuda:0"),
-        max_node_num=100000, #16384,
+        max_node_num=100000,  #16384,
         leaf_local_flag=True,  # save nodes to local nodes
         init_N=None,
         node_ctrl=True,
         nn_fusion=-1,  # if -1 use all gs, otherwise, find the nearest n time frame to warp
-        #
         dyn_o_flag=False,
-        #
         min_num_gs=32,
     ) -> None:
-        # * Init only init the pre-computed SCF, later will append leaves!
+        # Init only init the pre-computed SCF, later will append leaves!
         super().__init__()
         self.op_update_exclude = [
             "node_xyz",
@@ -83,9 +79,12 @@ class DynSCFGaussian(nn.Module):
             "sk_rotation",
         ]
 
+        # scf
+        self.scf = scf
+
+        # setup
         self.fast_inference_flag = False
         self.min_num_gs = min_num_gs
-
         self.register_buffer("nn_fusion", torch.tensor(nn_fusion))
         logging.info(f"ED Model use default {nn_fusion} nearest frame fusion")
         self.register_buffer("dyn_o_flag", torch.tensor(dyn_o_flag).bool())
@@ -93,23 +92,18 @@ class DynSCFGaussian(nn.Module):
             logging.warning(
                 f"Dynamic GS use Dyn_O, Far away points will have ID motion, the SE(3) field has an ambient motion I"
             )
-
-        self.scf = scf
-
         self.node_ctrl = node_ctrl
         if self.node_ctrl:
             logging.info(
                 f"Node control is enabled! (max number of nodes {max_node_num})"
             )
-        # self.max_node_num = max_node_num
         self.register_buffer("max_node_num", torch.tensor(max_node_num))
-
         self.register_buffer("w_correction_flag", torch.tensor([0]).squeeze().bool())
         self.register_buffer(
             "leaf_local_flag", torch.tensor([leaf_local_flag]).squeeze().bool()
         )
 
-        # * prepare activation
+        # prepare activation
         self.register_buffer("max_scale", torch.tensor(max_scale).to(self.device))
         self.register_buffer("min_scale", torch.tensor(min_scale).to(self.device))
         self.register_buffer(
@@ -117,7 +111,7 @@ class DynSCFGaussian(nn.Module):
         )
         self._init_act(self.max_scale, self.min_scale)
 
-        # * Init the empty leaf attr
+        # Init the [empty] leaf attr (will append later)
         if init_N is None:
             init_N = self.N
         self._xyz = nn.Parameter(torch.zeros(init_N, 3))  # N,3
@@ -127,16 +121,15 @@ class DynSCFGaussian(nn.Module):
         sph_rest_dim = 3 * (sph_order2nfeat(self.max_sph_order) - 1)
         self._features_dc = nn.Parameter(torch.zeros(init_N, 3))  # N,3
         self._features_rest = nn.Parameter(torch.zeros(init_N, sph_rest_dim))
-        self._skinning_weight = nn.Parameter(torch.zeros(init_N, self.scf.skinning_k))
+        self._skinning_weight = nn.Parameter(torch.zeros(init_N, self.scf.skinning_k))  # N,K=16
         self._dynamic_logit = nn.Parameter(self.o_inv_act(torch.ones(init_N, 1) * 0.99))
         # * leaf important status
         self.register_buffer("attach_ind", torch.zeros(init_N).long())  # N
-        self.register_buffer("ref_time", torch.zeros(init_N).long())  # N
+        self.register_buffer("ref_time", torch.zeros(init_N).long())  # N, tid, the time when the leaf is init
         # * init states
         self.register_buffer("xyz_gradient_accum", torch.zeros(init_N).float())
         self.register_buffer("xyz_gradient_denom", torch.zeros(init_N).long())
         self.register_buffer("max_radii2D", torch.zeros(init_N).float())
-
         # * for tracing the correspondence gradient
         self.register_buffer("corr_gradient_accum", torch.zeros(init_N).float())
         self.register_buffer("corr_gradient_denom", torch.zeros(init_N).long())
@@ -144,10 +137,8 @@ class DynSCFGaussian(nn.Module):
         self.to(self.device)
         self.summary(lite=True)
 
-        # ! dangerous flags
-        # * for viz the cate color
+        # dangerous flags, for viz the cate color
         self.return_cate_colors_flag = False
-
         return
 
     @classmethod
@@ -308,10 +299,6 @@ class DynSCFGaussian(nn.Module):
             index_color_map[gid] = self.group_colors[ind]
         return cate_sph, index_color_map
 
-    # @property
-    # def get_d(self):
-    #     return self.o_act(self._dynamic_logit)
-
     @property
     def get_s(self):
         return self.s_act(self._scaling)
@@ -389,17 +376,21 @@ class DynSCFGaussian(nn.Module):
         return
 
     def forward(self, t: int, active_sph_order=None, nn_fusion=None):
-        assert t < self.T, "t is out of range!"
+        # check t and sph order
+        assert t < self.T, "t is out of range!"  # target t, view t
         if active_sph_order is None:
             active_sph_order = int(self.max_sph_order)
         else:
             assert active_sph_order <= self.max_sph_order
 
-        s = self.get_s
-        o = self.get_o
+        # get 3 of 5 parameters
+        s = self.get_s  # scale, [N, 3]
+        o = self.get_o  # opacity
         sph_dim = 3 * sph_order2nfeat(active_sph_order)
-        sph = self.get_c[:, :sph_dim]
+        sph = self.get_c[:, :sph_dim]  # color
 
+        # get mu (center) and fr (rotation) at view/target time t (using scf deformation)
+        # the other 3 params keep the same over all time
         if self.fast_inference_flag:
             mu_live, fr_live = self.scf.fast_warp(
                 target_tid=t,
@@ -414,21 +405,19 @@ class DynSCFGaussian(nn.Module):
             )
         else:
             mu_live, fr_live = self.scf.warp(
-                attach_node_ind=self.attach_ind,
-                query_xyz=self.get_xyz(),
-                query_dir=self.get_R_mtx(),
-                query_tid=self.ref_time,
-                target_tid=t,
-                skinning_w_corr=(
-                    self._skinning_weight if self.w_correction_flag else None
-                ),
+                target_tid=t,  # target/view t index
+                attach_node_ind=self.attach_ind,  # attached scf node (determined by knn)
+                query_xyz=self.get_xyz(),  # the init leaf's xyz
+                query_dir=self.get_R_mtx(),  # the init leaf's R
+                query_tid=self.ref_time,  # [N], tid, the time when the leaf is init
+                skinning_w_corr=(self._skinning_weight if self.w_correction_flag else None),
                 dyn_o_flag=self.dyn_o_flag,
             )
 
+        # filter the gaussian by nn mask
         if nn_fusion is None:
             nn_fusion = self.nn_fusion.item()
         if nn_fusion > 0:
-            # filter the gaussian by nn mask
             with torch.no_grad():
                 supporting_t = torch.unique(self.ref_time)
                 # find nearest supporting t
@@ -440,18 +429,15 @@ class DynSCFGaussian(nn.Module):
                 logging.warning(f"nn_fusion has no gs supporting, dummy mask!")
                 # ! set the first two gs to be visible
                 filter_mask[:2] = True
-            # mu_live = mu_live[filter_mask]
-            # fr_live = fr_live[filter_mask]
-            # s = s[filter_mask]
-            # o = o[filter_mask]
-            # sph = sph[filter_mask]
-            # ! do this by mask the opacity to zero
             o = o * filter_mask[:, None].float()  # ! mask the opacity to zero
             assert (
                 not self.return_cate_colors_flag
             ), " not support cate color in nn fusion"
+
+        # cate color for viz
         if self.return_cate_colors_flag:
-            # logging.warning(f"VIZ purpose, return the cate-color")
+            raise 56465456156
+            logging.warning(f"VIZ purpose, return the cate-color")
             cate_sph, _ = self.get_cate_color()
             sph = torch.zeros_like(sph)
             sph[..., :3] = cate_sph  # zero pad
@@ -564,14 +550,17 @@ class DynSCFGaussian(nn.Module):
 
     @torch.no_grad()
     def append_new_gs(self, optimizer, tid, mu_w, quat_w, scales, opacity, rgb):
-        # ! note, this function never grow new nodes for now
-        # * Append leaves
+        # note, this function never grow new nodes for now
+        # Append leaves
         if scales.ndim == 1:
             scales = scales[:, None].expand(-1, 3)
         new_s_logit = self.s_inv_act(scales)
+
         assert opacity.ndim == 2 and opacity.shape[1] == 1
         new_o_logit = self.o_inv_act(opacity)
+
         new_feat_dc = RGB2SH(rgb)
+
         new_feat_rest = torch.zeros(len(scales), self._features_rest.shape[1]).to(
             self.device
         )
@@ -583,7 +572,7 @@ class DynSCFGaussian(nn.Module):
             [self.ref_time, torch.ones_like(attach_ind[0, :, 0]) * tid], dim=0
         )
 
-        # if use local leaf storage, have to convert to local!
+        # if use local leaf storage, have to convert to local
         if self.leaf_local_flag:
             attach_node_xyz = self.scf._node_xyz[tid][attach_ind[0, :, 0]]
             attach_node_R_wi = q2R(self.scf._node_rotation[tid][attach_ind[0, :, 0]])
@@ -595,7 +584,7 @@ class DynSCFGaussian(nn.Module):
         else:
             mu_save, quat_save = mu_w, quat_w
 
-        # finally update the parameters
+        # finally update the parameters to append the new gs
         self._densification_postprocess(
             optimizer,
             new_xyz=mu_save,  # ! store the position in live frame
@@ -762,7 +751,6 @@ class DynSCFGaussian(nn.Module):
 
         # now update the sk corr again, make sure the updated = 0.0
         if self.w_correction_flag:
-
             _, sk_w, sk_w_sum, _, _ = self.scf.get_skinning_weights(
                 query_xyz=self.get_xyz(),
                 query_t=self.ref_time,
@@ -941,6 +929,7 @@ class DynSCFGaussian(nn.Module):
         new_skinning_w,
         new_dyn_logit,
     ):
+        # new gs
         d = {
             "xyz": new_xyz,
             "f_dc": new_sph_dc,
@@ -953,7 +942,7 @@ class DynSCFGaussian(nn.Module):
         }
         d = {k: v for k, v in d.items() if v is not None}
 
-        # * update parameters
+        # append by updating parameters
         optimizable_tensors = cat_tensors_to_optimizer(optimizer, d)
         self._xyz = optimizable_tensors["xyz"]
         self._opacity = optimizable_tensors["opacity"]

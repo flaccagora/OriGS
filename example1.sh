@@ -1,4 +1,4 @@
-GPU_ID=6
+GPU_ID=1
 
 # CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_precompute.py --cfg ./profile/demo/demo_prep.yaml --ws ./demo/duck
 # CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/duck
@@ -12,15 +12,10 @@ GPU_ID=6
 # CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_precompute.py --cfg ./profile/demo/demo_prep.yaml --ws ./demo/train --dep_mode=uni --tap_mode=bootstapir --boundary_enhance_th=-1.0
 # CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/train
 
-# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_precompute.py --cfg ./profile/demo/demo_prep.yaml --ws ./demo/boat
-# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/boat
+# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_precompute.py --cfg ./profile/demo/demo_prep.yaml --ws ./demo/elephant
+# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/elephant
 
-# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_precompute.py --cfg ./profile/demo/demo_prep.yaml --ws ./demo/mallard-water
-# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/mallard-water
+CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/drift-turn
 
-# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_precompute.py --cfg ./profile/demo/demo_prep.yaml --ws ./demo/kite-surf
-# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/kite-surf
-
-CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_precompute.py --cfg ./profile/demo/demo_prep.yaml --ws ./demo/boat
-CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/boat
+# CUDA_VISIBLE_DEVICES=$GPU_ID python mosca_reconstruct.py --cfg ./profile/demo/demo_fit.yaml --ws ./demo/swing
 

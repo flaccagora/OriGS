@@ -23,7 +23,7 @@ import colorsys
 
 sys.path.append(osp.dirname(osp.abspath(__file__)))
 
-from camera import MonocularCameras
+from lib_moca.camera import MonocularCameras
 
 from dynamic_gs import DynSCFGaussian
 from static_gs import StaticGaussian
@@ -341,23 +341,29 @@ def fetch_leaves_in_world_frame(
 ):
     device = cams.rel_focal.device
 
+    # time list
     if end_t == -1:
         end_t = cams.T
     if t_list is None:
         t_list = list(range(start_t, end_t))
+
     if subsample > 1:
         logging.info(f"2D Subsample {subsample} for fetching ...")
 
+    # params list over time
     mu_list, quat_list, scale_list, rgb_list, time_index_list = [], [], [], [], []
     inst_list = []  # collect the leaf id as well
 
+    # for each time t
     for t in tqdm(t_list):
+        # get the mask, depth
         mask2d = input_mask_list[t].bool()
         H, W = mask2d.shape
         if subsample > 1:
             mask2d[::subsample, ::subsample] = False
-
         dep_map = input_dep_list[t].clone()
+
+        # get the 3D points by lifting
         cam_pcl = cams.backproject(
             cams.get_homo_coordinate_map(H, W)[mask2d].clone(), dep_map[mask2d]
         )
@@ -369,7 +375,6 @@ def fetch_leaves_in_world_frame(
         radius = cam_pcl[:, -1] / (0.5 * K[0, 0] + 0.5 * K[1, 1]) * float(subsample)
         scale = torch.stack([radius / squeeze_normal_ratio, radius, radius], dim=-1)
         time_index = torch.ones_like(mu[:, 0]).long() * t
-
         if input_normal_list is not None:
             nrm_map = input_normal_list[t].clone()
             cam_nrm = nrm_map[mask2d]
@@ -382,12 +387,12 @@ def fetch_leaves_in_world_frame(
             rot = torch.eye(3)[None].expand(len(radius), -1, -1)
         quat = matrix_to_quaternion(rot)
 
+        # append the 3D point params
         mu_list.append(mu.cpu())
         quat_list.append(quat.cpu())
         scale_list.append(scale.cpu())
         rgb_list.append(rgb.cpu())
         time_index_list.append(time_index.cpu())
-
         if input_inst_list is not None:
             inst_map = inst_list[t].clone()
             inst = inst_map[mask2d]
@@ -398,13 +403,14 @@ def fetch_leaves_in_world_frame(
     scale_all = torch.cat(scale_list, 0)
     rgb_all = torch.cat(rgb_list, 0)
 
+    # random sample to mitigate redundancy
     logging.info(f"Fetching {n_attach/1000.0:.3f}K out of {len(mu_all)/1e6:.3}M pts")
     if n_attach > len(mu_all) or n_attach <= 0:
         choice = torch.arange(len(mu_all))
     else:
         choice = torch.randperm(len(mu_all))[:n_attach]
 
-    # make gs5 param (mu, fr, s, o, sph) no rescaling
+    # make gs5 param (mu, fr, s, o, sph), no rescaling
     mu_init = mu_all[choice].clone()
     q_init = quat_all[choice].clone()
     s_init = scale_all[choice].clone()
@@ -416,6 +422,7 @@ def fetch_leaves_in_world_frame(
         inst_init = inst_all[choice].clone().to(device)
     else:
         inst_init = None
+
     if save_xyz_fn is not None:
         np.savetxt(
             save_xyz_fn,

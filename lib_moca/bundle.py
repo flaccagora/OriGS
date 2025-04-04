@@ -11,7 +11,7 @@ import cv2
 sys.path.append(osp.dirname(osp.abspath(__file__)))
 
 
-from camera import MonocularCameras
+from lib_moca.camera import MonocularCameras
 from viz_helper import make_video_from_pattern, viz_global_ba
 from robust_utils import positive_th_gaussian_decay
 

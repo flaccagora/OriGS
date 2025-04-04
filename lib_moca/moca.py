@@ -10,7 +10,7 @@ sys.path.append(osp.abspath(osp.dirname(__file__)))
 from epi_helpers import analyze_track_epi, identify_tracks
 from intrinsic_helpers import find_initinsic
 from intrinsic_helpers import compute_graph_energy, track2undistroed_homo
-from camera import MonocularCameras
+from lib_moca.camera import MonocularCameras
 from bundle import (
     compute_static_ba,
     query_buffers_by_track,

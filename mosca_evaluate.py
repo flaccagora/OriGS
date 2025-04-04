@@ -725,6 +725,8 @@ def test_fps(saved_dir, rounds=1, device=torch.device("cuda:0")):
         rd_sample = rd["rgb"].permute(1, 2, 0).cpu().detach().numpy()
         viz.append(rd_sample)
     viz = np.concatenate(viz, 1)
+    viz = np.clip(viz, 0, 1)
+    viz = (viz * 255).astype(np.uint8)
     imageio.imsave(osp.join(saved_dir, "fps_eval_samples.jpg"), viz)
 
     cnt = cams.T * rounds

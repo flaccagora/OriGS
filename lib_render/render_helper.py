@@ -45,11 +45,11 @@ def render(
     else:
         mu, fr, s, o, sph = gs_param[0]
         for i in range(1, len(gs_param)):
-            mu = torch.cat([mu, gs_param[i][0]], 0)
-            fr = torch.cat([fr, gs_param[i][1]], 0)
-            s = torch.cat([s, gs_param[i][2]], 0)
-            o = torch.cat([o, gs_param[i][3]], 0)
-            sph = torch.cat([sph, gs_param[i][4]], 0)
+            mu = torch.cat([mu, gs_param[i][0]], 0)  # mean
+            fr = torch.cat([fr, gs_param[i][1]], 0)  # rotation
+            s = torch.cat([s, gs_param[i][2]], 0)  # scale
+            o = torch.cat([o, gs_param[i][3]], 0)  # opacity
+            sph = torch.cat([sph, gs_param[i][4]], 0)  # color
     if opa_replace is not None:
         assert isinstance(opa_replace, float)
         o = torch.ones_like(o) * opa_replace

@@ -202,10 +202,10 @@ def photometric_warmup(ws, log_path, fit_cfg):
 
 
 def scaffold_reconstruct(ws, log_path, fit_cfg):
+    # setup
     seed_everything(SEED)
     DEPTH_DIR, TAP_MODE = auto_get_depth_dir_tap_mode(ws, fit_cfg)
     DEPTH_BOUNDARY_TH = getattr(fit_cfg, "depth_boundary_th", 1.0)
-
     EPI_TH = getattr(fit_cfg, "epi_th", 1e-3)
     DYN_ID_CNT = getattr(fit_cfg, "dyn_id_cnt", 2 * 4)
     SCF_GEO_KEYFRAME_RATE = getattr(fit_cfg, "scf_geo_keyframe_rate", 4)
@@ -230,9 +230,7 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
     )
 
     # re-identify the static and dynamic regions
-    consider_photo_error_dyn_id_th = getattr(
-        fit_cfg, "consider_photo_error_dyn_id_th", -1
-    )
+    consider_photo_error_dyn_id_th = getattr(fit_cfg, "consider_photo_error_dyn_id_th", -1)
     if consider_photo_error_dyn_id_th > 0:
         photo_error_masks = get_static_render_error_mask(
             s2d,
@@ -243,6 +241,7 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
     else:
         photo_error_masks = None
 
+    # update the track identification
     s2d = update_s2d_track_identification(
         s2d,
         log_path,
@@ -261,6 +260,7 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
         dynamic_track_mask=s2d.dynamic_track_mask.cpu().numpy(),
     )
 
+    # visualize the epi mask
     if s2d.has_epi:
         viz_epi_mask = s2d.epi > EPI_TH
         viz_epi_mask = viz_epi_mask[..., None] * s2d.rgb
@@ -269,15 +269,18 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
             (viz_epi_mask.cpu().numpy() * 255).astype(np.uint8),
         )
 
+    # load camera
     cams: MonocularCameras = MonocularCameras.load_from_ckpt(
         torch.load(osp.join(log_path, "bundle", "bundle_cams.pth"))
     ).to(device)
 
+    # get t
     sub_t_list = [
         t for t in range(s2d.T) if t % SCF_GEO_KEYFRAME_RATE == 0 or t == s2d.T - 1
     ]
     logging.info(f"Dyn GEO first work on len(sub_t_list)={len(sub_t_list)} key frames")
 
+    # get dynamic curves
     get_dynamic_curves_filter_factor = (
         s2d.scale_nw
         if getattr(fit_cfg, "get_dynamic_curves_filter_factor_in_world", True)
@@ -312,7 +315,7 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
         curve_mask.sum(0).unsqueeze(-1) + 1e-3
     )
 
-    # * refilter the curve by photo error if set
+    # refilter the curve by photo error if set
     refilter_curve_by_photo_error_cnt = getattr(
         fit_cfg, "refilter_curve_by_photo_error_cnt", -1
     )
@@ -342,9 +345,10 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
         curve_filter_mask[curve_filter_mask.clone()] = refilter_valid_curve_mask
         curve_uv = curve_uv[:, refilter_valid_curve_mask]
 
+    # visualize the curve
     viz_mosca_curves_before_optim(curve_xyz, curve_rgb, curve_mask, cams, log_path)
 
-    # * get scaffold
+    # init scaffold (register params, update topo)
     scaffold: MoSca = MoSca(
         node_xyz=curve_xyz.detach().clone(),
         node_certain=curve_mask,
@@ -369,27 +373,27 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
         mlevel_detach_self_flag=getattr(
             fit_cfg, "mosca_mlevel_detach_self_flag", False
         ),
-        #
         w_corr_maintain_sum_flag=getattr(
             fit_cfg, "mosca_w_corr_maintain_sum_flag", False
         ),
         # node_grouping=curve_group_id if s2d.has_vos else None,
         # break_topo_between_group=False,  # ! dycheck one body has multiple seg, which is not good here
     )
-    scaffold.compute_rotation_from_xyz()
+    scaffold.compute_rotation_from_xyz()  # formulated as a optimization problem
+    # scf: T,N,3; T,N,4
+
+    # resample nodes in the scaffold
     if getattr(fit_cfg, "mosca_resample_flag", True):
         sampled_inds = scaffold.resample_node(resample_factor=1.0, use_mask=True)
     else:
         logging.warning("Not resampling the scaffold")
         sampled_inds = torch.arange(scaffold.M).to(device)
-    node_rgb = curve_rgb[sampled_inds]
+    node_rgb = curve_rgb[sampled_inds]  # resample the rgb in curve for visualization
 
-    logging.info(
-        f"MoSca: get scaffold with M={scaffold.M} and unit={scaffold.spatial_unit}"
-    )
-
+    logging.info(f"MoSca: get scaffold with M={scaffold.M} and unit={scaffold.spatial_unit}")
     logging.info("*" * 20 + "MoSca Geo" + "*" * 20)
-    # * Optimize the curve with ARAP
+
+    # optimize the scaffold
     assert (
         getattr(fit_cfg, "geo_mosca_use_mask_topo", True) or s2d.track.shape[-1] == 3
     ), "Must use mask topo for 2D tracks"
@@ -429,6 +433,8 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
             viz_node_rgb=node_rgb,
             viz_level_flag=getattr(fit_cfg, "geo_mosca_viz_level_flag", True),
         )
+
+    # visualize the scaffold
     viz_list = viz_list_of_colored_points_in_cam_frame(
         [cams.trans_pts_to_cam(t, it).cpu() for t, it in enumerate(scaffold._node_xyz)],
         node_rgb,
@@ -436,7 +442,7 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
     )
     imageio.mimsave(osp.join(log_path, "cam_curve_optimized.gif"), viz_list, loop=1000)
 
-    # resampled time!
+    # resampled time t
     if SCF_GEO_KEYFRAME_RATE > 1:
         fulltime_curve_mask = s2d.track_mask.detach().clone()[
             :, s2d.dynamic_track_mask
@@ -444,29 +450,28 @@ def scaffold_reconstruct(ws, log_path, fit_cfg):
         scaffold.resample_time(
             new_tids=torch.arange(cams.T), new_node_certain=fulltime_curve_mask
         )
+
+    # save the scaffold
     os.makedirs(osp.join(log_path, "mosca"), exist_ok=True)
     torch.save(scaffold.state_dict(), osp.join(log_path, "mosca", "mosca.pth"))
 
-    return s2d
+    return s2d  # the scaffold has been saved in the log_path
 
 
 def photometric_reconstruct(ws, log_path, fit_cfg):
+    # setup
     seed_everything(SEED)
     DEPTH_DIR, TAP_MODE = auto_get_depth_dir_tap_mode(ws, fit_cfg)
     DEPTH_BOUNDARY_TH = getattr(fit_cfg, "depth_boundary_th", 1.0)
     DEP_MEDIAN = getattr(fit_cfg, "dep_median", 1.0)
-
     EPI_TH = getattr(fit_cfg, "epi_th", 1e-3)
     DYN_ID_CNT = getattr(fit_cfg, "dyn_id_cnt", 2 * 4)
-
     STATIC_GS_START_OPA = getattr(fit_cfg, "gs_static_start_opacity", 0.01)
     DYNAMIC_GS_START_OPA = getattr(fit_cfg, "gs_dynamic_start_opacity", 0.02)
-
     PHOTO_STATIC_WARM_STEPS = getattr(fit_cfg, "photo_static_warm_steps", -1)
-
     device = torch.device("cuda:0")
 
-    # load solved camera and s2d and rescale
+    # load s2d
     s2d = (
         Saved2D(ws)
         .load_epi()
@@ -483,20 +488,23 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
         .load_flow()
         .to(device)
     )
+
+    # load track identification
     track_identification = np.load(osp.join(log_path, "track_identification.npz"))
     s2d.register_track_indentification(
         torch.from_numpy(track_identification["static_track_mask"]).to(device),
         torch.from_numpy(track_identification["dynamic_track_mask"]).to(device),
     )
 
+    # load camera
     cams: MonocularCameras = MonocularCameras.load_from_ckpt(
         torch.load(osp.join(log_path, "bundle", "bundle_cams.pth"))
     ).to(device)
-    scaffold = MoSca.load_from_ckpt(
-        torch.load(osp.join(log_path, "mosca", "mosca.pth"))
-    ).to(device)
 
-    # * reset the scaffold mlevel config
+    # load scaffold
+    scaffold = MoSca.load_from_ckpt(torch.load(osp.join(log_path, "mosca", "mosca.pth"))).to(device)
+
+    # reset the scaffold mlevel config
     scaffold.set_multi_level(
         mlevel_arap_flag=True,
         mlevel_list=getattr(fit_cfg, "photo_mlevel_list", [1, 6]),
@@ -504,17 +512,20 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
         mlevel_w_list=getattr(fit_cfg, "photo_mlevel_w_list", [0.4, 0.3]),
     )
 
-    # construct the GS models
+    # GS solver
     photo_solver = DynReconstructionSolver(
         working_dir=log_path,
         device=device,
         radius_init_factor=getattr(fit_cfg, "gs_radius_init_factor", 4.0),
         opacity_init_factor=getattr(fit_cfg, "gs_opacity_init_factor", 0.95),
     )
-    # ! warning, this mask is only useful for constructing the model.
+
+    # warning, this mask is only useful for constructing the model
     photo_solver.identify_fg_mask_by_nearest_curve(
         s2d, cams, "gs_model_construct_fg_mask.mp4"
     )
+
+    # compute normals
     if GS_BACKEND == "gof":
         photo_solver.compute_normals_for_s2d(
             s2d,
@@ -524,16 +535,18 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
             nn_min_cnt=4,
             viz_fn="gs_model_construct_normal.mp4",
         )
+
+    # static model
     include_fg_in_static = getattr(fit_cfg, "gs_include_fg_in_static", True)
-    s_model_warmup_path = osp.join(
-        log_path, f"static_warm_s_model_{GS_BACKEND.lower()}.pth"
-    )
+    s_model_warmup_path = osp.join(log_path, f"static_warm_s_model_{GS_BACKEND.lower()}.pth")
     if osp.exists(s_model_warmup_path):
+        # load the static model from the warmup
         logging.info(f"Load static model from {s_model_warmup_path}")
         s_model = StaticGaussian.load_from_ckpt(torch.load(s_model_warmup_path)).to(
             device
         )
     else:
+        # construct static model
         s_model = photo_solver.get_static_model(
             s2d=s2d,
             cams=cams,
@@ -543,6 +556,7 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
             mask_type="depth" if include_fg_in_static else "static_depth",
         )
 
+    # construct dynamic model
     if getattr(fit_cfg, "photo_d_model_fetch_only_error_th", -1) > 0:
         photo_data = np.load(osp.join(log_path, "photo_warmup_rendered.npz"))
         render_error_th = getattr(fit_cfg, "photo_d_model_fetch_only_error_th", -1)
@@ -560,11 +574,10 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
         d_model_add_mask = render_error_mask
     else:
         d_model_add_mask = None
-
     d_model = photo_solver.get_dynamic_model(
         s2d=s2d,
         cams=cams,
-        scf=scaffold,
+        scf=scaffold,  # for attaching the scaffold to each gs leaf
         n_init=getattr(fit_cfg, "gs_dynamic_n_init", 30000),
         radius_max=getattr(fit_cfg, "gs_radius_max", 0.1),
         max_sph_order=getattr(fit_cfg, "gs_max_sph_order", 0),
@@ -574,6 +587,8 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
         # ! below is set to dyn_gs_model becaues it controls the densification
         max_node_num=getattr(fit_cfg, "gs_max_node_num", 100000),
     )
+
+    # warmup photometric fitting
     with torch.no_grad():
         if DYNAMIC_GS_START_OPA > 0:
             d_model._opacity.data = d_model.o_inv_act(
@@ -590,6 +605,7 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
                 )
             )
 
+    # photometric fitting
     photo_solver.photometric_fit(
         s2d=s2d,
         total_steps=getattr(fit_cfg, "photo_total_steps", 6000),
@@ -718,27 +734,26 @@ def photometric_reconstruct(ws, log_path, fit_cfg):
 if __name__ == "__main__":
     import argparse
 
+    # augment
     parser = argparse.ArgumentParser("MoSca-V2 Reconstruction")
     parser.add_argument("--ws", type=str, help="Source folder", required=True)
     parser.add_argument("--cfg", type=str, help="profile yaml file path", required=True)
     parser.add_argument("--no_viz", action="store_true", help="no viz")
     args, unknown = parser.parse_known_args()
 
+    # cfg
     cfg = OmegaConf.load(args.cfg)
     cli_cfg = OmegaConf.from_dotlist([arg.lstrip("--") for arg in unknown])
     cfg = OmegaConf.merge(cfg, cli_cfg)
-
     logdir = setup_recon_ws(args.ws, fit_cfg=cfg)
 
-    # * RUN
+    # main pipeline
     static_reconstruct(args.ws, logdir, cfg)
-    photometric_warmup(
-        args.ws, logdir, cfg
-    )  # this is optional, if not set, will directly skip and return.
+    photometric_warmup(args.ws, logdir, cfg)
     scaffold_reconstruct(args.ws, logdir, cfg)
     photometric_reconstruct(args.ws, logdir, cfg)
 
-    # * EVAL AND VIZ
+    # evaluation and visualization
     datamode = getattr(cfg, "mode", "iphone")
     if datamode == "sintel":
         test_func = test_sintel_cam
@@ -781,7 +796,6 @@ if __name__ == "__main__":
 
     if not args.no_viz and datamode in ["wild"]:
         from mosca_viz import viz_main
-
         viz_main(
             save_dir=osp.join(logdir, "viz"),
             log_dir=logdir,
@@ -795,3 +809,4 @@ if __name__ == "__main__":
             up_ratio=getattr(cfg, "viz_up_ratio", 0.05),
             bg_color=getattr(cfg, "photo_default_bg_color", [0.0, 0.0, 0.0]),
         )
+

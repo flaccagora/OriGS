@@ -54,17 +54,18 @@ def load_gt_cam(ws, fit_cfg):
 
 
 def static_reconstruct(ws, log_path, fit_cfg):
+    # config
     seed_everything(SEED)
     DEPTH_DIR, TAP_MODE = auto_get_depth_dir_tap_mode(ws, fit_cfg)
     DEPTH_BOUNDARY_TH = getattr(fit_cfg, "depth_boundary_th", 1.0)
     INIT_GT_CAMERA_FLAG = getattr(fit_cfg, "init_gt_camera", False)
     DEP_MEDIAN = getattr(fit_cfg, "dep_median", 1.0)
-
     EPI_TH = getattr(fit_cfg, "ba_epi_th", getattr(fit_cfg, "epi_th", 1e-3))
     logging.info(f"Static BA with EPI_TH={EPI_TH}")
     print(f"Static BA with EPI_TH={EPI_TH}")
     device = torch.device("cuda:0")
 
+    # load 2d data
     s2d: Saved2D = (
         Saved2D(ws)
         .load_epi()
@@ -78,6 +79,7 @@ def static_reconstruct(ws, log_path, fit_cfg):
         .load_vos()
     )
 
+    # init camera
     if INIT_GT_CAMERA_FLAG:
         # if start form gt camera, load gt camera here
         logging.info(f"Initializing from GT camera")
@@ -119,6 +121,7 @@ def static_reconstruct(ws, log_path, fit_cfg):
     else:
         cams = None
 
+    # BA solve camera
     logging.info("*" * 20 + "MoCa BA" + "*" * 20)
     cams, s2d, _ = moca_solve(
         ws=log_path,
@@ -165,6 +168,7 @@ def static_reconstruct(ws, log_path, fit_cfg):
         viz_valid_ba_points=getattr(fit_cfg, "ba_viz_valid_points", False),
     )  # ! S2D is changed becuase the depth is re-scaled
 
+    # test camera
     datamode = getattr(fit_cfg, "mode", "iphone")
     if datamode == "sintel":
         test_func = test_sintel_cam

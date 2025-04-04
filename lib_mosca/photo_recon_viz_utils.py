@@ -22,7 +22,7 @@ from lib_mosca.gs_utils.loss_helper import (
     compute_normal_loss,
 )
 from lib_mosca.scaffold_utils.viz_helper import viz_curve
-from lib_mosca.camera import MonocularCameras
+from lib_moca.camera import MonocularCameras
 from lib_render.gauspl_renderer_native import render_cam_pcl
 from lib_render.sh_utils import RGB2SH, SH2RGB
 from lib_prior.prior_loading import Saved2D

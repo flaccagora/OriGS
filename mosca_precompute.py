@@ -54,7 +54,7 @@ def load_imgs_from_dir(src):
     img_fns = sorted(
         [it for it in os.listdir(img_dir) if it.endswith(".png") or it.endswith(".jpg")]
     )
-    img_list = [imageio.imread(osp.join(img_dir, it))[..., :3] for it in img_fns]
+    img_list = [imageio.v2.imread(osp.join(img_dir, it))[..., :3] for it in img_fns]
     return img_list, img_fns
 
 
