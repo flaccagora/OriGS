@@ -122,32 +122,6 @@ def query_image_buffer_by_pix_int_coord(buffer, pixel_int_coordinate):
     return ret
 
 
-def visualize_track(save_fn, tracks, visibility, video_pt, max_viz_cnt=512):
-    # video_pt (T,3,H,W)
-    # (T,N,2)
-    # (T,N)
-    video_pt = torch.as_tensor(video_pt)[None]
-    tracks = torch.as_tensor(tracks)[None]
-    visibility = torch.as_tensor(visibility)[None]
-    assert video_pt.ndim == 5 and video_pt.shape[0] == 1
-    assert tracks.ndim == 4 and tracks.shape[0] == 1
-    assert visibility.ndim == 3 and visibility.shape[0] == 1
-    _step = max(1, tracks.shape[2] // max_viz_cnt)
-    viz_choice = torch.arange(0, tracks.shape[2], _step)
-    vis = Visualizer(
-        save_dir=osp.dirname(save_fn),
-        linewidth=2,
-        draw_invisible=True,  # False
-        tracks_leave_trace=4,
-    )
-    vis.visualize(
-        video=video_pt,
-        tracks=tracks[:, :, viz_choice, :2],
-        visibility=visibility[:, :, viz_choice],
-        filename=osp.basename(save_fn),
-    )
-
-
 class Saved2D(nn.Module):
     def __init__(self, ws) -> None:
         super().__init__()
@@ -261,17 +235,6 @@ class Saved2D(nn.Module):
         # assign
         self.register_gradfree_buffer("dep", torch.Tensor(dep))
         self.register_gradfree_buffer("dep_mask", torch.Tensor(dep_mask).bool())
-        return self
-
-    @torch.no_grad()
-    def replace_depth(self, dep, dep_mask):
-        if hasattr(self, "dep"):
-            assert dep.shape == self.dep.shape, f"{dep.shape} vs {self.dep.shape}"
-            assert (
-                dep_mask.shape == self.dep_mask.shape
-            ), f"{dep_mask.shape} vs {self.dep_mask.shape}"
-        self.register_gradfree_buffer("dep", dep)
-        self.register_gradfree_buffer("dep_mask", dep_mask)
         return self
 
     @torch.no_grad()

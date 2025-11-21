@@ -189,7 +189,8 @@ class DepthCrafterPipeline(StableVideoDiffusionPipeline):
             encode_event.record()
             torch.cuda.synchronize()
             elapsed_time_ms = start_event.elapsed_time(encode_event)
-            print(f"Elapsed time for encoding video: {elapsed_time_ms} ms")
+            import logging
+            logging.debug(f"DepthCrafter encoding: {elapsed_time_ms:.0f} ms")
 
         torch.cuda.empty_cache()
 
@@ -338,7 +339,8 @@ class DepthCrafterPipeline(StableVideoDiffusionPipeline):
             denoise_event.record()
             torch.cuda.synchronize()
             elapsed_time_ms = encode_event.elapsed_time(denoise_event)
-            print(f"Elapsed time for denoising video: {elapsed_time_ms} ms")
+            import logging
+            logging.debug(f"DepthCrafter denoising: {elapsed_time_ms:.0f} ms")
 
         if not output_type == "latent":
             # cast back to fp16 if needed
@@ -350,7 +352,8 @@ class DepthCrafterPipeline(StableVideoDiffusionPipeline):
                 decode_event.record()
                 torch.cuda.synchronize()
                 elapsed_time_ms = denoise_event.elapsed_time(decode_event)
-                print(f"Elapsed time for decoding video: {elapsed_time_ms} ms")
+                import logging
+                logging.debug(f"DepthCrafter decoding: {elapsed_time_ms:.0f} ms")
 
             frames = self.video_processor.postprocess_video(
                 video=frames, output_type=output_type

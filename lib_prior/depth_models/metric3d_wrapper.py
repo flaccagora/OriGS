@@ -106,7 +106,8 @@ def metric3d_process_folder(
     default_fov_deg=53.13,
     invalid_mask_list=None,
 ):
-    print("Metric-3d processing...")
+    import logging
+    logging.info("Processing depth with Metric3D")
     assert len(img_list) == len(fn_list)
     os.makedirs(dst, exist_ok=True)
     dep_list = []

@@ -1,11 +1,13 @@
+import torch
+import numpy as np
+import logging
+import imageio
+import os, sys, os.path as osp
+import cv2 as cv
+import torch.nn.functional as F
+
 from tqdm import tqdm
-import torch, numpy as np
 from transforms3d.euler import mat2euler, euler2mat
-from lib_render.gauspl_renderer_native import render_cam_pcl
-from lib_render.sh_utils import RGB2SH, SH2RGB
-from lib_render.render_helper import GS_BACKEND
-from matplotlib import pyplot as plt
-import torch, numpy as np
 from pytorch3d.transforms import (
     axis_angle_to_matrix,
     matrix_to_axis_angle,
@@ -14,25 +16,20 @@ from pytorch3d.transforms import (
     quaternion_to_axis_angle,
 )
 from pytorch3d.ops import knn_points
-import logging
-import imageio
-import os, sys, os.path as osp
-from tqdm import tqdm
+
+from lib_render.gauspl_renderer_native import render_cam_pcl
+from lib_render.sh_utils import RGB2SH, SH2RGB
+from lib_render.render_helper import GS_BACKEND, render
 
 sys.path.append(osp.dirname(osp.abspath(__file__)))
 sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)), ".."))
-import open3d as o3d
-from lib_render.render_helper import render
 
-from lib_render.sh_utils import RGB2SH, SH2RGB
-import cv2 as cv
-import torch.nn.functional as F
+import open3d as o3d
+from matplotlib.colors import hsv_to_rgb
+from sklearn.decomposition import PCA
 
 TEXTCOLOR = (255, 0, 0)
 BORDER_COLOR = (100, 255, 100)
-
-from matplotlib.colors import hsv_to_rgb
-from sklearn.decomposition import PCA
 
 
 @torch.no_grad()
@@ -446,7 +443,7 @@ def viz_single_2d_node_video(
 
     # node_s1 = d_model.scf.node_sigma.expand(-1, 3) * node_r1_factor  # 0.333  # * 0.05
     node_s1 = (
-        torch.ones_like(d_model.scf.node_sigma.expand(-1, 3)) * node_r1
+        torch.ones(d_model.scf.node_sigma.shape[1], 3) * node_r1
     )  # 0.333  # * 0.05
     node_s1 = torch.clamp(node_s1, 1e-8, d_model.scf.spatial_unit * 3)
     node_o1 = torch.ones_like(node_s1[:, :1]) * node_opa1
@@ -516,6 +513,13 @@ def viz_single_2d_node_video(
             gs5.append([line_xyz, line_fr, line_s, line_o, l_sph])
 
         ##################################################
+        # set gs5 device
+        for i in range(len(gs5)):
+            if isinstance(gs5[i], list):
+                for j in range(len(gs5[i])):
+                    gs5[i][j] = gs5[i][j].to(node_mu.device)
+            else:
+                gs5[i] = gs5[i].to(node_mu.device)
         if rel_focal is None:
             rel_focal = cams.rel_focal
         render_dict = render(

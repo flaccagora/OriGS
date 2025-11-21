@@ -124,7 +124,7 @@ class MoCaPrep:
 
     def __init_flow__(self, flow_mode, device):
         self.flow_mode = flow_mode
-        print(f"loading {flow_mode} ...")
+        logging.info(f"Loading optical flow model: {flow_mode}")
         if flow_mode == "raft":
             from optical_flow.raft_wrapper import get_raft_model, raft_process_folder
 
@@ -150,7 +150,7 @@ class MoCaPrep:
         align_metric_model="metric3d",
     ):
 
-        print(f"loading {dep_mode} ...")
+        logging.info(f"Loading depth model: {dep_mode}")
         self.dep_mode = dep_mode
         self.align_to_metric = False  # when the main depth model is not metric, have to align to a metric model, by default we use unidepth because it's easy to use
 
@@ -182,8 +182,8 @@ class MoCaPrep:
                 f"DepthCrafter is not a metric model, align to metric model"
             )
         else:  # todo: add unidepth and maybe zoe depth
-            print(
-                f"Unknown dep_mode: {dep_mode}, Depth Model not load, will try to find depth from dir {dep_mode}_depth or {dep_mode}_depth.npz"
+            logging.warning(
+                f"Unknown dep_mode: {dep_mode}. Depth model not loaded. Will try to find depth from {dep_mode}_depth or {dep_mode}_depth.npz"
             )
 
         # * manually overwrite the align_to_metric flag, because if there is only a scale correction, in real setting the scale normalization will wash out the alignment!
@@ -243,7 +243,7 @@ class MoCaPrep:
                 get_spatracker,
             )
 
-            print("loading spatracker...")
+            logging.info("Loading tracking model: SpaTracker")
             self.tap = get_spatracker(device, S_lenth=spatracker_S_lenth)
             self.tap_process_func = spatracker_process_folder
         elif tap_mode == "cotracker":
@@ -252,9 +252,7 @@ class MoCaPrep:
                 get_cotracker,
             )
 
-            print(
-                f"loading cotracker v={cotrakcer_version} online={cotracker_online_flag}..."
-            )
+            logging.info(f"Loading tracking model: CoTracker v{cotrakcer_version} (online={cotracker_online_flag})")
             self.tap = get_cotracker(
                 device,
                 cotrakcer_version=cotrakcer_version,
@@ -268,7 +266,7 @@ class MoCaPrep:
                 get_bootstapir_model,
             )
 
-            print("loading bootstapir...")
+            logging.info("Loading tracking model: BootsTAPIR")
             self.tap = get_bootstapir_model(device=device)
             self.tap_process_func = bootstapir_process_folder
         else:

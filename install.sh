@@ -1,4 +1,4 @@
-ENV_NAME=mosca
+ENV_NAME=origs
 NUMPY_VERSION=1.26.4
 
 conda remove -n $ENV_NAME --all -y

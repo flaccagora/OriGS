@@ -18,8 +18,9 @@ from depth_utils import viz_depth_list
 
 def make_video(src_dir, dst_fn):
     import imageio
+    import logging
 
-    print(f"export video to {dst_fn}...")
+    logging.info(f"Exporting video to {dst_fn}")
     # print(os.listdir(src_dir))
     img_fn = [
         f for f in os.listdir(src_dir) if f.endswith(".png") or f.endswith(".jpg")
@@ -57,7 +58,8 @@ def get_unidepth_model(device):
         backbone=backbone,
         pretrained=True,
         trust_repo=True,
-        force_reload=True,
+        # force_reload=True,
+        force_reload=False,
     )
 
     model.to(device)
@@ -72,7 +74,8 @@ def unidepth_process_folder(
     dst,
     invalid_mask_list=None,
 ):
-    print("Generating UniDepth...")
+    import logging
+    logging.info("Processing depth with UniDepth")
     assert len(img_list) == len(fn_list)
     os.makedirs(dst, exist_ok=True)
     dep_list = []
@@ -91,7 +94,8 @@ def unidepth_process_folder(
 
 
 def unidepth_process_folder_legacy(model, src, dst):
-    print("Generating UniDepth...")
+    import logging
+    logging.info("Processing depth with UniDepth")
     os.makedirs(dst, exist_ok=True)
     viz_dir = dst + "_viz"
     os.makedirs(viz_dir, exist_ok=True)

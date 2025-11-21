@@ -57,8 +57,8 @@ class DepthCrafterDemo:
                 try:
                     self.pipe.enable_model_cpu_offload()
                 except Exception as e:
-                    print(e)
-                    print("Model offload is not enabled")
+                    import logging
+                    logging.warning(f"Model offload failed: {e}")
             else:
                 raise ValueError(f"Unknown cpu offload option: {cpu_offload}")
         else:
@@ -67,8 +67,8 @@ class DepthCrafterDemo:
         try:
             self.pipe.enable_xformers_memory_efficient_attention()
         except Exception as e:
-            print(e)
-            print("Xformers is not enabled")
+            import logging
+            logging.warning(f"Xformers not enabled: {e}")
         self.pipe.enable_attention_slicing()
 
     def infer(
@@ -123,7 +123,8 @@ def get_depthcrafter_model(modify_scheduler=True):
         )
         return model
     except:
-        print("Failed to load model from cache, try to download from the internet")
+        import logging
+        logging.warning("Failed to load DepthCrafter from cache, downloading from internet")
         model = DepthCrafterDemo(
             unet_path="tencent/DepthCrafter",
             pre_train_path="stabilityai/stable-video-diffusion-img2vid-xt",
@@ -210,5 +211,3 @@ if __name__ == "__main__":
     depthcrafter_process_folder(
         model, img_list, fn_list, dst="./debug/depth_crafter25", n_steps=25
     )
-
-    print()

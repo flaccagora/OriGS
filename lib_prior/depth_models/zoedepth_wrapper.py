@@ -21,8 +21,9 @@ import sys, os, os.path as ops
 
 def make_video(src_dir, dst_fn):
     import imageio
+    import logging
 
-    print(f"export video to {dst_fn}...")
+    logging.info(f"Exporting video to {dst_fn}")
     # print(os.listdir(src_dir))
     img_fn = [
         f for f in os.listdir(src_dir) if f.endswith(".png") or f.endswith(".jpg")
@@ -80,7 +81,8 @@ def get_zoedepth_model(device, type="NK"):
 
 
 def zoedepth_process_folder(model, src, dst):
-    print("Generating ZoeDepth...")
+    import logging
+    logging.info("Processing depth with ZoeDepth")
     os.makedirs(dst, exist_ok=True)
     viz_dir = dst + "_viz"
     os.makedirs(viz_dir, exist_ok=True)

@@ -144,6 +144,15 @@ photo_lr_nq: 0.001
 photo_lr_nq_final: 0.00001
 photo_lr_nsig: 0.01
 photo_lr_sph_rest_factor: 20.0
+# ndg
+photo_lr_diags: 0.00016
+photo_lr_triangs: 0.00016
+photo_lr_Sigma: 0.00016
+photo_lr_mu_t: 0.00016
+photo_lr_mu_ori: 0.00016
+photo_lr_mu_delta_p: 0.00016
+photo_lr_mu_delta_r: 0.00016
+photo_lr_mu_delta_s: 0.00016
 
 photo_lambda_vel_xyz_reg: 3.0
 photo_lambda_vel_rot_reg: 1.0
@@ -161,7 +170,7 @@ photo_d_ctrl_densify_steps: 300
 photo_d_ctrl_prune_steps: 300
 photo_d_ctrl_reset_steps: 1000
 photo_d_ctrl_densify_max_grad: 0.0001
-photo_d_ctrl_prune_opacity_th: 0.02
+photo_d_ctrl_prune_opacity_th: 0.01
 photo_d_ctrl_reset_opacity: 0.01
 
 photo_s_ctrl_densify_steps: 400
@@ -183,32 +192,3 @@ photo_dyn_node_densify_steps: [3250]
 photo_dyn_node_densify_grad_th: 0.5
 photo_dyn_node_densify_record_start_steps: 2000
 photo_dyn_node_densify_max_gs_per_new_node: 32
-# # #####################################################
-# # #####################################################
-# # # * photo refilter
-# refilter_curve_by_photo_error_cnt: 1 #4 # at least have n frame large error
-# refilter_curve_by_photo_error_th: 0.1 #
-# # * photo warm
-# photo_warm_epi_th: 0.0001 # ! set to normal range!
-# photo_warm_reset_opacity: True
-
-# photo_static_warm_steps: 6000 # ! debug for now #8000
-# photo_warm_optim_cam_after_steps: 1000
-# photo_warm_lambda_rgb: 1.0
-# photo_warm_lambda_dep: 0.5
-# photo_warm_lambda_normal: 0.1
-# photo_warm_random_bg: True
-# photo_warm_lr_sph_rest_factor: 10.0 #4.0
-# photo_warm_viz_interval: 1999
-# photo_warm_lr_p: 0.0003
-# photo_warm_lr_p_final: 0.000001
-# photo_warm_lr_q: 0.001
-# photo_warm_lr_s: 0.01
-# photo_warm_lr_o: 0.3
-# photo_warm_lr_sph: 0.0025
-
-# photo_warm_s_ctrl_reset_steps: 2001
-# photo_warm_s_ctrl_densify_steps: 400
-# photo_warm_s_ctrl_prune_steps: 400
-# photo_warm_s_ctrl_reset_opacity: 0.01
-# photo_warm_s_ctrl_prune_opacity_th: 0.01

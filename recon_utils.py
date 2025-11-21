@@ -5,16 +5,15 @@ import numpy as np, random, kornia
 import imageio
 
 from lib_render.render_helper import GS_BACKEND
-from mosca_viz import viz_main, viz_list_of_colored_points_in_cam_frame
-from lib_moca.bundle import query_buffers_by_track
-from lib_moca.epi_helpers import analyze_track_epi, identify_tracks
+from origs_viz import viz_list_of_colored_points_in_cam_frame
+from lib_camera.bundle import query_buffers_by_track
+from lib_camera.epi_helpers import analyze_track_epi, identify_tracks
 
 SEED = 12345
 
 
 def seed_everything(seed=SEED):
     logging.info(f"seed: {seed}")
-    print(f"seed: {seed}")
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -39,13 +38,12 @@ def setup_recon_ws(ws, fit_cfg, logdir="logs"):
     for path in [
         "profile",
         "lib_prior",
-        "lib_moca",
-        "lib_mosca",
-        "lite_moca_reconstruct.py",
-        "mosca_reconstruct.py",
-        "mosca_evaluate.py",
-        "mosca_precompute.py",
-        "mosca_viz.py",
+        "lib_camera",
+        "lib_scaffold",
+        "lite_origs_reconstruct.py",
+        "origs_reconstruct.py",
+        "origs_precompute.py",
+        "origs_viz.py",
     ]:
         os.system(f"cp -r {path} {backup_dir}")
     # reduce the backup size
