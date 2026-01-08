@@ -130,7 +130,7 @@ EOF
 
 
 
-pip torch
-pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable" --no-build-isolation
+# pip torch
+# pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable" --no-build-isolation
 
 
