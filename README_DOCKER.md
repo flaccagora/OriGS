@@ -32,6 +32,23 @@ docker run --gpus all -it --rm \
 - `--rm`: Removes the container after exit.
 - `-v $(pwd):/app`: Mounts your current directory to `/app` inside the container, allowing you to edit files on your host and run them inside the container.
 
+## Persisting Changes
+
+The command above uses `--rm`, which removes the container environment when you exit.
+
+- **Code/Data Persistence**: Any changes you make to files inside `/app` **are saved** because that directory is mounted from your host machine (`-v $(pwd):/app`).
+- **System/Environment Persistence**: Any changes to the system (e.g., `pip install new-package`, `apt-get install`) are **lost** when you exit if you use `--rm`.
+
+To keep system-level changes, you have three options:
+
+1.  **Update Dockerfile (Recommended)**: Add the new content to `Dockerfile` and rebuild. This ensures your environment is reproducible.
+2.  **Remove `--rm`**: Run the container without the `--rm` flag. When you exit, the container stops but isn't deleted. You can resume it later with `docker start -ai <container_name>`.
+3.  **Commit to New Image**: If you have made complex changes interactively, you can save the container's state as a new image:
+    ```bash
+    # In a new terminal (while container is running or after stopping without --rm)
+    docker commit <container_id_or_name> origs-env-custom
+    ```
+
 ## Environment
 
 The environment `origs` is automatically activated when you enter the container. You should see `(origs)` in your command prompt.
