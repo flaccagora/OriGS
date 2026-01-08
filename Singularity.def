@@ -36,6 +36,10 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # Activate environment for the subsequent install steps
     conda activate origs
     
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+    
     # Set compiler environment variables to use the conda-installed compilers
     export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
     export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
