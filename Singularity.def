@@ -72,10 +72,10 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     
     # Install Gaussian Splatting Custom Rasterizers
     # These require the compilers set above
-    pip install lib_render/simple-knn
-    pip install lib_render/diff-gaussian-rasterization-alphadep-add3
-    pip install lib_render/diff-gaussian-rasterization-alphadep
-    pip install lib_render/gof-diff-gaussian-rasterization
+    pip install lib_render/simple-knn --no-build-isolation
+    pip install lib_render/diff-gaussian-rasterization-alphadep-add3 --no-build-isolation
+    pip install lib_render/diff-gaussian-rasterization-alphadep --no-build-isolation
+    pip install lib_render/gof-diff-gaussian-rasterization --no-build-isolation
     
     # Final dependency updates
     pip install numpy==1.26.4
