@@ -4,6 +4,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
 %files
     # Copy requirements and local libraries needed for installation
     requirements.txt /opt/origs_source/requirements.txt
+    jax_requirements.txt /opt/origs_source/jax_requirements.txt
     lib_render /opt/origs_source/lib_render
 
 %post
@@ -83,6 +84,10 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     pip install -U scipy
     pip install opencv-python==4.10.0.84
     pip install mmcv-full==1.7.2
+
+    # jax
+    pip install -r jax_requirements.txt
+
     
     # --- End installation steps ---
     EOF
