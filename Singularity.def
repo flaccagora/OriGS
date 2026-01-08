@@ -29,6 +29,8 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # Source conda to make it available in this shell
     . /opt/conda/etc/profile.d/conda.sh
     
+    export PATH=/opt/conda/envs/origs/bin:$PATH
+    
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
@@ -39,7 +41,6 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # Activate environment for the subsequent install steps
     conda activate origs
     
-    export PATH=/opt/conda/envs/origs/bin:$PATH
 
     # Set compiler environment variables to use the conda-installed compilers
     export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
