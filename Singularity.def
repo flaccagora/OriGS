@@ -74,31 +74,32 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     
     # Install Gaussian Splatting Custom Rasterizers
     # These require the compilers set above
-    echo "Installing custom Gaussian Splatting rasterizers..."
-    echo "Detected cuda version: $(nvcc --version)"
-    echo "Pytorch version: $(python -c 'import torch; print(torch.__version__)')"
-    echo "list conda packages: $(conda list| grep torch)"
-    pip install lib_render/simple-knn --no-build-isolation
-    pip install lib_render/diff-gaussian-rasterization-alphadep-add3 --no-build-isolation
-    pip install lib_render/diff-gaussian-rasterization-alphadep --no-build-isolation
-    pip install lib_render/gof-diff-gaussian-rasterization --no-build-isolation
-    
-    # Final dependency updates
-    pip install numpy==1.26.4
-    pip install -U scikit-learn
-    pip install -U scipy
-    pip install opencv-python==4.10.0.84
-    pip install mmcv-full==1.7.2
-
-    # jax
-    pip install -r jax_requirements.txt
-
-    
-    # --- End installation steps ---
     EOF
+    # echo "Installing custom Gaussian Splatting rasterizers..."
+    # echo "Detected cuda version: $(nvcc --version)"
+    # echo "Pytorch version: $(python -c 'import torch; print(torch.__version__)')"
+    # echo "list conda packages: $(conda list| grep torch)"
+    # pip install lib_render/simple-knn --no-build-isolation
+    # pip install lib_render/diff-gaussian-rasterization-alphadep-add3 --no-build-isolation
+    # pip install lib_render/diff-gaussian-rasterization-alphadep --no-build-isolation
+    # pip install lib_render/gof-diff-gaussian-rasterization --no-build-isolation
     
-    # Clean up to reduce image size
-    conda clean --all -y
+    # # Final dependency updates
+    # pip install numpy==1.26.4
+    # pip install -U scikit-learn
+    # pip install -U scipy
+    # pip install opencv-python==4.10.0.84
+    # pip install mmcv-full==1.7.2
+
+    # # jax
+    # pip install -r jax_requirements.txt
+
+    
+    # # --- End installation steps ---
+    # EOF
+    
+    # # Clean up to reduce image size
+    # conda clean --all -y
 
 %environment
     # Set up environment variables for the runtime
