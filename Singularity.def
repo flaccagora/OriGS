@@ -36,6 +36,65 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # Create the environment 'origs' matching install.sh
     # Includes specific gcc/gxx versions for compatibility
     conda create -n origs gcc_linux-64=9 gxx_linux-64=9 python=3.10 numpy=1.26.4 -y
+    
+    # Run the installation steps in bash to handle conda activation scripts correctly
+    /bin/bash <<'EOF'
+    set -e
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate origs
+    
+    # Set compiler environment variables to use the conda-installed compilers
+    export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
+    export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
+    export CPP=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
+
+    echo "Verifying compilers:"
+    $CC --version
+    $CXX --version
+    
+    # --- Begin installation steps from install.sh ---
+    
+    pip install numpy==1.26.4
+    
+    # PyTorch and Core Libs
+    # conda install pytorch==2.1.0 torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+    pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
+    conda install fvcore iopath -c fvcore -c iopath -c conda-forge -y
+    conda install nvidiacub -c bottler -y
+    conda install pytorch3d -c pytorch3d -y
+    
+    pip install pyg_lib torch_scatter torch_geometric torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.0+cu118.html
+    conda install xformers -c xformers -y
+    
+    # Install requirements from file
+    cd /opt/origs_source
+    pip install chumpy --no-build-isolation
+    pip install -r requirements.txt
+    pip install numpy==1.26.4
+    
+    # Install Gaussian Splatting Custom Rasterizers
+    # These require the compilers set above
+    pip install lib_render/simple-knn --no-build-isolation
+    pip install lib_render/diff-gaussian-rasterization-alphadep-add3 --no-build-isolation
+    pip install lib_render/diff-gaussian-rasterization-alphadep --no-build-isolation
+    pip install lib_render/gof-diff-gaussian-rasterization --no-build-isolation
+    
+    # Final dependency updates
+    pip install numpy==1.26.4
+    pip install -U scikit-learn
+    pip install -U scipy
+    pip install opencv-python==4.10.0.84
+    pip install mmcv-full==1.7.2
+
+    # jax
+    pip install -r jax_requirements.txt
+
+    
+    # --- End installation steps ---
+    EOF
+    
+    # Clean up to reduce image size
+    conda clean --all -y
 
 %environment
     # Set up environment variables for the runtime
@@ -65,62 +124,3 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     Usage:
     singularity shell --nv origs.sif
     singularity run --nv origs.sif
-
-
-    # # Run the installation steps in bash to handle conda activation scripts correctly
-    # /bin/bash <<'EOF'
-    # set -e
-    # source /opt/conda/etc/profile.d/conda.sh
-    # conda activate origs
-    
-    # # Set compiler environment variables to use the conda-installed compilers
-    # export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
-    # export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
-    # export CPP=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
-
-    # echo "Verifying compilers:"
-    # $CC --version
-    # $CXX --version
-    
-    # # --- Begin installation steps from install.sh ---
-    
-    # pip install numpy==1.26.4
-    
-    # # PyTorch and Core Libs
-    # conda install pytorch==2.1.0 torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
-    # conda install fvcore iopath -c fvcore -c iopath -c conda-forge -y
-    # conda install nvidiacub -c bottler -y
-    # conda install pytorch3d -c pytorch3d -y
-    
-    # pip install pyg_lib torch_scatter torch_geometric torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.0+cu118.html
-    # conda install xformers -c xformers -y
-    
-    # # Install requirements from file
-    # cd /opt/origs_source
-    # pip install chumpy --no-build-isolation
-    # pip install -r requirements.txt
-    # pip install numpy==1.26.4
-    
-    # # Install Gaussian Splatting Custom Rasterizers
-    # # These require the compilers set above
-    # pip install lib_render/simple-knn --no-build-isolation
-    # pip install lib_render/diff-gaussian-rasterization-alphadep-add3 --no-build-isolation
-    # pip install lib_render/diff-gaussian-rasterization-alphadep --no-build-isolation
-    # pip install lib_render/gof-diff-gaussian-rasterization --no-build-isolation
-    
-    # # Final dependency updates
-    # pip install numpy==1.26.4
-    # pip install -U scikit-learn
-    # pip install -U scipy
-    # pip install opencv-python==4.10.0.84
-    # pip install mmcv-full==1.7.2
-
-    # # jax
-    # pip install -r jax_requirements.txt
-
-    
-    # # --- End installation steps ---
-    # EOF
-    
-    # # Clean up to reduce image size
-    # conda clean --all -y
