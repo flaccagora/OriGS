@@ -58,7 +58,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     
     # PyTorch and Core Libs
     # conda install pytorch==2.1.0 torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
-    pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
+    # pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
     # conda install fvcore iopath -c fvcore -c iopath -c conda-forge -y
     # conda install nvidiacub -c bottler -y
     # conda install pytorch3d -c pytorch3d -y
@@ -91,7 +91,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
 
     
     # --- End installation steps ---
-    EOF
+EOF
     
     # Clean up to reduce image size
     conda clean --all -y
