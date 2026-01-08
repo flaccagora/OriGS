@@ -29,7 +29,6 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # Source conda to make it available in this shell
     . /opt/conda/etc/profile.d/conda.sh
         
-
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
@@ -37,12 +36,12 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # Includes specific gcc/gxx versions for compatibility
     conda create -n origs gcc_linux-64=9 gxx_linux-64=9 python=3.10 numpy=1.26.4 -y
     
-    export PATH=/opt/conda/envs/origs/bin:$PATH
-
-    # Activate environment for the subsequent install steps
-    # conda activate origs
+    # Run the installation steps in bash to handle conda activation scripts correctly
+    /bin/bash <<'EOF'
+    set -e
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate origs
     
-
     # Set compiler environment variables to use the conda-installed compilers
     export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
     export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
@@ -85,6 +84,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     pip install mmcv-full==1.7.2
     
     # --- End installation steps ---
+    EOF
     
     # Clean up to reduce image size
     conda clean --all -y
