@@ -66,6 +66,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     
     # Install requirements from file
     cd /opt/origs_source
+    pip install chumpy --no-build-isolation
     pip install -r requirements.txt
     pip install numpy==1.26.4
     
