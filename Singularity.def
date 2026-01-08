@@ -74,6 +74,10 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     
     # Install Gaussian Splatting Custom Rasterizers
     # These require the compilers set above
+    echo "Installing custom Gaussian Splatting rasterizers..."
+    echo "Detected cuda version: $(nvcc --version)"
+    echo "Pytorch version: $(python -c 'import torch; print(torch.__version__)')"
+    echo "list conda packages: $(conda list| grep torch)"
     pip install lib_render/simple-knn --no-build-isolation
     pip install lib_render/diff-gaussian-rasterization-alphadep-add3 --no-build-isolation
     pip install lib_render/diff-gaussian-rasterization-alphadep --no-build-isolation
