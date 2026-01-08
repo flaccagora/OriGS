@@ -31,6 +31,10 @@ RUN conda init bash
 WORKDIR /app
 COPY . /app
 
+# Ensure conda Terms of Service are accepted
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
 # Create the conda environment 'origs' as specified in install.sh
 # We include the GCC compilers in the environment creation
 RUN conda create -n origs gcc_linux-64=9 gxx_linux-64=9 python=3.10 numpy=1.26.4 -y
