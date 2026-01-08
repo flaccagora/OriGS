@@ -29,16 +29,15 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # Source conda to make it available in this shell
     . /opt/conda/etc/profile.d/conda.sh
     
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
     # Create the environment 'origs' matching install.sh
     # Includes specific gcc/gxx versions for compatibility
     conda create -n origs gcc_linux-64=9 gxx_linux-64=9 python=3.10 numpy=1.26.4 -y
     
     # Activate environment for the subsequent install steps
     conda activate origs
-    
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
-
     
     # Set compiler environment variables to use the conda-installed compilers
     export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
