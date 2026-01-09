@@ -1,7 +1,8 @@
 pytorch-lightning==2.0.2
 
 # huggingface_hub
-huggingface-hub>=0.22.0 # this version is fro unidepth v2
+huggingface-hub==0.22.0
+ # this version is fro unidepth v2
 diffusers >= 0.9.0
 accelerate
 transformers==4.36.2
@@ -68,7 +69,7 @@ Pillow==9.5.0
 
 # marigold
 accelerate>=0.22.0
-diffusers>=0.20.1
+diffusers==0.26.0 ######## TODO: check if this version is ok
 transformers>=4.32.1
 
 einops
