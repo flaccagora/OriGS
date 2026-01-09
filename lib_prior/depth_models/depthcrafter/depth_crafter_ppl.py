@@ -413,11 +413,11 @@ class DepthCrafterPipeline(StableVideoDiffusionPipeline):
                 import logging
                 logging.debug(f"DepthCrafter decoding: {elapsed_time_ms:.0f} ms")
             
-            processor = getattr(self, "video_processor", None)
-            if processor is None:
-                processor = self.image_processor
+            # processor = getattr(self, "video_processor", None)
+            # if processor is None:
+            #     processor = self.image_processor
 
-            frames = self.processor.postprocess_video(
+            frames = self.image_processor.postprocess_video(
                 video=frames, output_type=output_type
             )
         else:
