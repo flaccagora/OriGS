@@ -57,7 +57,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     pip install numpy==1.26.4
     
     # PyTorch and Core Libs
-    conda install pytorch==2.1.0 torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+    conda install pytorch==2.2.0 torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
     # pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
     conda install fvcore iopath -c fvcore -c iopath -c conda-forge -y
     conda install nvidiacub -c bottler -y
@@ -65,7 +65,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable" --no-build-isolation
 
 
-    pip install pyg_lib torch_scatter torch_geometric torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.0+cu118.html
+    pip install pyg_lib torch_scatter torch_geometric torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.2.0+cu118.html
     conda install xformers -c xformers -y
     
     # Install requirements from file
@@ -75,8 +75,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     pip install numpy==1.26.4
     
     pip uninstall torch torchvision torchaudio -y
-    pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
-
+    pip install torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu118
     # Install Gaussian Splatting Custom Rasterizers
     # These require the compilers set above
     pip install lib_render/simple-knn --no-build-isolation
