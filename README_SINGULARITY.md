@@ -30,7 +30,7 @@ singularity build --fakeroot origs.sif Singularity.def
 or with Apptainer:
 
 ```bash
-apptainer build --fakeroot origs.sif Singularity.def
+apptainer build --fakeroot --sandbox --nv --writable origs.sif Singularity.def
 ```
 
 ### Option 2: Build from Docker Image
@@ -68,7 +68,9 @@ This process will:
 To use the container with GPU support (`--nv`) and bind your current directory (`-B` is often implicitly handled, but explicit binding ensures access):
 
 ```bash
-singularity shell --nv origs.sif
+singularity shell --nv --fakeroot --writable --home $HOME  origs.sif 
+source /opt/conda/etc/profile.d/conda.sh
+conda activate origs
 ```
 
 Or to run a specific command:
