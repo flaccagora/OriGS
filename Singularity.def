@@ -61,20 +61,20 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     # pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
     # conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1  pytorch-cuda=11.8 -c pytorch -c nvidia -y
     pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu118
-    conda install fvcore iopath -c fvcore -c iopath -c conda-forge -y
-    conda install nvidiacub -c bottler -y
-    # conda install pytorch3d -c pytorch3d -y
-    pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable" --no-build-isolation
+    # conda install fvcore iopath -c fvcore -c iopath -c conda-forge -y
+    # conda install nvidiacub -c bottler -y
+    # # conda install pytorch3d -c pytorch3d -y
+    # pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable" --no-build-isolation
 
 
-    pip install pyg_lib torch_scatter torch_geometric torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.1+cu118.html
-    conda install xformers -c xformers -y
+    # pip install pyg_lib torch_scatter torch_geometric torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.1+cu118.html
+    # conda install xformers -c xformers -y
     
-    # Install requirements from file
-    cd /opt/origs_source
-    pip install chumpy --no-build-isolation
-    pip install -r requirements.txt
-    pip install numpy==1.26.4
+    # # Install requirements from file
+    # cd /opt/origs_source
+    # pip install chumpy --no-build-isolation
+    # pip install -r requirements.txt
+    # pip install numpy==1.26.4
     
     # # # pip uninstall torch torchvision torchaudio -y
     # # # pip install torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu118
