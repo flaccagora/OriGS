@@ -69,8 +69,6 @@ To use the container with GPU support (`--nv`) and bind your current directory (
 
 ```bash
 singularity shell --nv --fakeroot --writable --home $HOME  origs.sif 
-source /opt/conda/etc/profile.d/conda.sh
-conda activate origs
 ```
 
 Or to run a specific command:
